@@ -1,0 +1,13 @@
+# Data (Freddie Mac SFLLD) - do not commit
+data/*
+!data/.gitkeep
+
+# Scratch notebook for raw-data exploration
+scratch.ipynb
+notebooks/scratch.ipynb
+
+# Python / Jupyter
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+*.pkl
