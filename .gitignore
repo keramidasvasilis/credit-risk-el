@@ -11,3 +11,6 @@ __pycache__/
 .ipynb_checkpoints/
 .venv/
 *.pkl
+
+# Saved models
+outputs/*.pickle
