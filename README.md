@@ -43,7 +43,7 @@ The LGD and EAD models are fitted on the 14,084 defaulted loans (notebook `03_lg
 $$\text{RR} = 1 - \frac{\text{actual\_loss}}{\text{EAD}},$$
 clipped to $[0, 1]$, and $\text{LGD} = 1 - \text{RR}$. It is available for 12,986 loans (the loss is not reported for the other 1,098). The credit conversion factor is $\text{CCF} = \text{EAD} / \text{orig\_upb}$. It is not clipped, since 898 loans (6.4%) have a CCF above 1.
 
-**Split and inputs.** The defaulted loans are split randomly into a training set (11,267 loans, 80%) and a test set (2,817 loans, 20%). There are 14 candidate inputs: 7 continuous and 7 categorical, the latter converted into dummy variables, with the most frequent category as the reference category. Missing values of `credit_score` and `dti` are filled with the median of the training set, and states with fewer than 100 training loans are merged into one category, `Other`.
+**Split and inputs.** The defaulted loans are split according to the split of the PD model: the defaulted loans of the PD test set form the test set (2,817 loans) and the others the training set (11,267 loans). Hence every test loan is out of sample for the PD, LGD and EAD models. There are 14 candidate inputs: 7 continuous and 7 categorical, the latter converted into dummy variables, with the most frequent category as the reference category. Missing values of `credit_score` and `dti` are filled with the median of the training set, and states with fewer than 100 training loans are merged into one category, `Other`.
 
 **LGD model.** The distribution of RR has a mass at 0 (8.0% of the loans), a mass at 1 (2.1%) and a continuous part on $(0, 1)$ (89.9%). We model the three parts separately:
 
@@ -56,14 +56,14 @@ $$\widehat{\text{RR}} = \hat p_1 \left[ \hat p_2 + (1 - \hat p_2)\, \hat\mu \rig
 
 **EAD model.** A linear regression for the CCF, fitted on all the training loans. The predicted exposure is $\widehat{\text{EAD}} = \widehat{\text{CCF}} \times \text{orig\_upb}$.
 
-**Variable selection.** As in the PD model, a variable is kept if at least one of its dummies has a p-value below 5%. The criterion is applied to each model separately, so the models use different sets of inputs. For the EAD model, robust (HC3) standard errors give the same selection as the classical ones.
+**Variable selection.** As in the PD model, a variable is kept if at least one of its dummies has a p-value below 5%. The criterion is applied to each model separately, so the models use different sets of inputs. In the second logistic regression, two dummies (`property_type:CP` and `property_state:CT`) have no loan with RR = 1, so their coefficients do not exist (quasi-complete separation); they are dropped from that model and their loans are treated like the reference category. For the EAD model, robust (HC3) standard errors give the same selection as the classical ones.
 
 ### Results
 
 On the test set:
 
-- **Logistic regression 1:** AUC 0.848.
-- **Logistic regression 2:** AUC 0.750. Only 60 test loans have RR = 1, so this value is uncertain.
-- **Beta regression:** the mean predicted RR (0.520) is almost equal to the mean actual one (0.521), and the correlation between predicted and actual values is 0.53.
-- **Combined LGD model:** on the 2,572 test loans with a reported loss, the mean predicted RR is 0.490 against 0.493 actual, and the correlation is 0.58. When the loans are sorted by predicted RR and split into ten groups of equal size, the mean predicted and actual RR differ by less than 0.02 in every group, except in the highest one (0.77 against 0.79), where the model underestimates the recovery rate, i.e. it overestimates the LGD.
-- **EAD model:** the mean predicted EAD (178,833 USD) is almost equal to the mean actual one (178,810 USD). The mean absolute error is 7,008 USD, against 7,574 USD for the benchmark that uses the mean CCF of the training set for every loan, a reduction of 7.5%. The model improves on the benchmark only modestly, since the EAD is determined mostly by the original balance of the loan (the correlation between the predicted and the actual CCF is 0.33).
+- **Logistic regression 1:** AUC 0.874.
+- **Logistic regression 2:** AUC 0.759. Only 60 test loans have RR = 1, so this value is uncertain.
+- **Beta regression:** the mean predicted RR (0.524) is close to the mean actual one (0.521), and the correlation between predicted and actual values is 0.50.
+- **Combined LGD model:** on the 2,599 test loans with a reported loss, the mean predicted RR is 0.492 against 0.489 actual, and the correlation is 0.58. When the loans are sorted by predicted RR and split into ten groups of equal size, the mean predicted and actual RR differ by less than 0.02 in every group.
+- **EAD model:** the mean predicted EAD (181,996 USD) is almost equal to the mean actual one (182,120 USD). The mean absolute error is 6,943 USD, against 7,416 USD for the benchmark that uses the mean CCF of the training set for every loan, a reduction of 6.4%. The model improves on the benchmark only modestly, since the EAD is determined mostly by the original balance of the loan (the correlation between the predicted and the actual CCF is 0.33).
