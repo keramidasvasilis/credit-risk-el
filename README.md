@@ -81,3 +81,28 @@ The actual loss is the loss of the defaulted loans, clipped to $[0, \text{EAD}]$
 When the loans are sorted by expected loss and split into ten groups of equal size, the expected and the actual loss increase together from group to group, so the model ranks the loans correctly. The highest group contains 54% of the total expected loss, and there the expected loss is within 3% of the actual one. In the groups 2 to 8 it is between 3% and 19% above the actual loss, which is a lower bound, so we cannot tell how much of the difference is due to the missing losses.
 
 ![Expected and actual loss by group](outputs/el_by_group.png)
+
+## Limitations
+
+**Data and default definition**
+- Loans that have not closed yet (7,001) are counted as non-defaults, and the loans closed with codes `16` and `96` are removed.
+- Only the vintages 2005–2009 are used (the housing crisis), with 50,000 loans per vintage, so the results may not hold for other periods.
+- The models are evaluated on a random split, not on a later period, so their stability across vintages is not tested.
+- The PD is the probability of default over the whole life of the loan, up to March 2026, and not the 12-month PD that is commonly used in practice.
+
+**PD model**
+- The inputs are characteristics at origination only, and the calibration is checked on the same period as the fit.
+
+**LGD and EAD models**
+- The EAD is an approximation: `zero_balance_removal_upb` is measured at the end of the resolution process and not at the moment of default. We assume that the principal does not change in between, which we have not verified.
+- 6.4% of the defaulted loans have a CCF above 1. We have not verified the cause, and we do not clip the CCF.
+- The recovery rate is clipped to $[0, 1]$.
+- The loss is not reported for 1,098 of the 14,084 defaulted loans, and these loans are not used for the LGD model.
+- The second logistic regression has only 60 events in the test set, so its AUC (0.759) is uncertain. Two dummies (`property_type:CP` and `property_state:CT`) have no events and are dropped from this model.
+- The LGD and EAD models are fitted on defaulted loans only and are applied to all loans, which is an extrapolation that cannot be validated with this data.
+- The variables are selected with p-values, separately for each model. In the EAD model the residuals are far from normal, and robust (HC3) standard errors give the same selection.
+
+**Expected loss**
+- The missing values of `credit_score`, `dti`, `ltv` and `num_borrowers` are filled with the median (the most frequent value for `num_borrowers`) of the training set. The `dti` is missing for about 4% of the test loans.
+- The actual loss is not reported for 218 defaulted test loans, so the total actual loss is given as a range.
+- There is a single random split, and no confidence intervals are computed.
