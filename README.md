@@ -67,3 +67,17 @@ On the test set:
 - **Beta regression:** the mean predicted RR (0.524) is close to the mean actual one (0.521), and the correlation between predicted and actual values is 0.50.
 - **Combined LGD model:** on the 2,599 test loans with a reported loss, the mean predicted RR is 0.492 against 0.489 actual, and the correlation is 0.58. When the loans are sorted by predicted RR and split into ten groups of equal size, the mean predicted and actual RR differ by less than 0.02 in every group.
 - **EAD model:** the mean predicted EAD (181,996 USD) is almost equal to the mean actual one (182,120 USD). The mean absolute error is 6,943 USD, against 7,416 USD for the benchmark that uses the mean CCF of the training set for every loan, a reduction of 6.4%. The model improves on the benchmark only modestly, since the EAD is determined mostly by the original balance of the loan (the correlation between the predicted and the actual CCF is 0.33).
+
+## Expected loss
+
+The expected loss of a loan is $\text{EL} = \text{PD} \times \widehat{\text{LGD}} \times \widehat{\text{EAD}}$ (notebook `04_expected_loss.ipynb`). It is computed for the 48,994 loans of the test set of the PD model. None of the three models was fitted on these loans, so every prediction is out of sample. The LGD and EAD models are fitted on defaulted loans only and are applied here to all loans, including those that have not defaulted, which is an extrapolation that cannot be validated with this data. The missing values of `credit_score`, `dti`, `ltv` and `num_borrowers` are filled with the medians (the most frequent value for `num_borrowers`) of the training set of the LGD and EAD models.
+
+### Results
+
+The total expected loss is 233.6 million USD on a total exposure of 8.64 billion USD (2.70%). The model expects 2,838 defaults against 2,817 actual ones.
+
+The actual loss is the loss of the defaulted loans, clipped to $[0, \text{EAD}]$ like the recovery rate, and 0 for the loans that did not default. It is not reported for 218 of the 2,817 defaulted loans, so the total actual loss is not known exactly. If these loans had zero loss it would be 225.1 million USD (the expected loss is then 1.04 times the actual one), and if each defaulted loan had the mean loss of those with a reported loss, 243.9 million USD (ratio 0.96). The second value rests on an assumption that cannot be verified.
+
+When the loans are sorted by expected loss and split into ten groups of equal size, the expected and the actual loss increase together from group to group, so the model ranks the loans correctly. The highest group contains 54% of the total expected loss, and there the expected loss is within 3% of the actual one. In the groups 2 to 8 it is between 3% and 19% above the actual loss, which is a lower bound, so we cannot tell how much of the difference is due to the missing losses.
+
+![Expected and actual loss by group](outputs/el_by_group.png)
