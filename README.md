@@ -39,9 +39,19 @@ The model is also well calibrated: when the test loans are sorted by predicted P
 
 The LGD and EAD models are fitted on the 14,084 defaulted loans (notebook `03_lgd_ead_models.ipynb`). Their estimates are conditional on default, so they can then be applied to loans that have not defaulted, to compute the expected loss.
 
-**Targets.** The exposure is $\text{EAD} = $ `zero_balance_removal_upb`, the unpaid principal balance just before the loan was closed. It is measured at the end of the resolution process and not at the moment of default, which is not in the data, so it is an approximation of the balance at default. The recovery rate is
-$$\text{RR} = 1 - \frac{\text{actual\_loss}}{\text{EAD}},$$
-clipped to $[0, 1]$, and $\text{LGD} = 1 - \text{RR}$. It is available for 12,986 loans (the loss is not reported for the other 1,098). The credit conversion factor is $\text{CCF} = \text{EAD} / \text{orig\_upb}$. It is not clipped, since 898 loans (6.4%) have a CCF above 1.
+**Targets.** The exposure is $`\text{EAD}`$ = `zero_balance_removal_upb`, the unpaid principal balance just before the loan was closed. It is measured at the end of the resolution process and not at the moment of default, which is not in the data, so it is an approximation of the balance at default. The recovery rate is
+
+```math
+\text{RR} = 1 - \frac{\text{actual\_loss}}{\text{EAD}},
+```
+
+clipped to $[0, 1]$, and $\text{LGD} = 1 - \text{RR}$. It is available for 12,986 loans (the loss is not reported for the other 1,098). The credit conversion factor is
+
+```math
+\text{CCF} = \frac{\text{EAD}}{\text{orig\_upb}}.
+```
+
+It is not clipped, since 898 loans (6.4%) have a CCF above 1.
 
 **Split and inputs.** The defaulted loans are split according to the split of the PD model: the defaulted loans of the PD test set form the test set (2,817 loans) and the others the training set (11,267 loans). Hence every test loan is out of sample for the PD, LGD and EAD models. There are 14 candidate inputs: 7 continuous and 7 categorical, the latter converted into dummy variables, with the most frequent category as the reference category. Missing values of `credit_score` and `dti` are filled with the median of the training set, and states with fewer than 100 training loans are merged into one category, `Other`.
 
@@ -54,7 +64,11 @@ clipped to $[0, 1]$, and $\text{LGD} = 1 - \text{RR}$. It is available for 12,98
 By the law of total expectation,
 $$\widehat{\text{RR}} = \hat p_1 \left[ \hat p_2 + (1 - \hat p_2)\, \hat\mu \right], \qquad \widehat{\text{LGD}} = 1 - \widehat{\text{RR}}.$$
 
-**EAD model.** A linear regression for the CCF, fitted on all the training loans. The predicted exposure is $\widehat{\text{EAD}} = \widehat{\text{CCF}} \times \text{orig\_upb}$.
+**EAD model.** A linear regression for the CCF, fitted on all the training loans. The predicted exposure is
+
+```math
+\widehat{\text{EAD}} = \widehat{\text{CCF}} \times \text{orig\_upb}.
+```
 
 **Variable selection.** As in the PD model, a variable is kept if at least one of its dummies has a p-value below 5%. The criterion is applied to each model separately, so the models use different sets of inputs. In the second logistic regression, two dummies (`property_type:CP` and `property_state:CT`) have no loan with RR = 1, so their coefficients do not exist (quasi-complete separation); they are dropped from that model and their loans are treated like the reference category. For the EAD model, robust (HC3) standard errors give the same selection as the classical ones.
 
